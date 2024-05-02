@@ -12,7 +12,6 @@ use Illuminate\Http\Request;
 
 class CourseController extends Controller
 {
-
     public function index(Request $request)
     {
         $courses = Course::query();
@@ -20,9 +19,13 @@ class CourseController extends Controller
         $q = $request->query("q");
         $status = $request->query("status");
 
-        $courses->when($q, function ($query) use ($q) {
+        $result = $courses->when($q, function ($query) use ($q) {
             return $query->whereRaw("name LIKE '%" . strtolower($q) . "%'");
-        });
+        })->get(); 
+
+        if ($result->isEmpty()) {
+            return response()->json(["status" => "error", 'message' => 'Course not found'], 404);
+        }
 
         $courses->when($status, function ($query) use ($status) {
             return $query->where('status', '=', $status);
@@ -30,9 +33,10 @@ class CourseController extends Controller
 
         return response()->json([
             "status" => "success",
-            "data" => $courses->paginate(10)
+            "data" => $courses->paginate(1)
         ]);
     }
+
 
     public function show($id)
     {
@@ -45,10 +49,10 @@ class CourseController extends Controller
         }
 
         $reviews = Review::where("course_id", "=", $id)->get()->toArray();
-        if(count($reviews) > 0) {
+        if (count($reviews) > 0) {
             $userIds = array_column($reviews, "user_id");
             $users = getUserByIds($userIds);
-            if($users["status"] === "error") {
+            if ($users["status"] === "error") {
                 $reviews = [];
             } else {
                 foreach ($reviews as $key => $review) {

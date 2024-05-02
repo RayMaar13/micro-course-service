@@ -14,6 +14,7 @@ class MyCourseController extends Controller
     {
             $myCourses = MyCourse::query()->with("course");
             $userId = $request->query("user_id");
+            var_dump($request->header("Authorization"));
 
             $myCourses->when($userId, function($query) use ($userId) {
                 return $query->where("user_id", "=", $userId);
